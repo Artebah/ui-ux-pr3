@@ -1,5 +1,11 @@
 import {useEffect, useRef, useState} from "react";
 import {createRoot} from "react-dom/client";
+import {Heart, RotateCcw, Search} from "lucide-react";
+import {Badge} from "@/components/ui/badge";
+import {Button} from "@/components/ui/button";
+import {Card, CardContent} from "@/components/ui/card";
+import {Input} from "@/components/ui/input";
+import {NativeSelect, NativeSelectOption} from "@/components/ui/native-select";
 import recipes from "./recipes.json";
 import {filterCatalog, matchingRecipes} from "./matching";
 import "./style.css";
@@ -27,25 +33,26 @@ function Metadata({recipe}) {
 
 function FavoriteButton({recipe, favorites, onFavorite, detail = false}) {
   const saved = favorites.has(recipe.id);
-  return <button type="button" className={detail ? "button secondary" : "heart"} data-favorite={recipe.id}
+  return <Button type="button" variant="outline" size={detail ? "default" : "icon"} className={detail ? "favorite-detail" : "heart"} data-favorite={recipe.id}
     aria-label={`Обране: ${recipe.name}`} aria-pressed={saved} onClick={() => onFavorite(recipe)}>
-    {detail ? (saved ? "♥ У збережених" : "♡ Зберегти") : (saved ? "♥" : "♡")}
-  </button>;
+    <Heart aria-hidden="true" fill={saved ? "currentColor" : "none"} />
+    {detail && (saved ? "У збережених" : "Зберегти")}
+  </Button>;
 }
 
 function RecipeCard({recipe, missing, favoriteProps, heading: Heading = "h3"}) {
-  return <article className="card">
+  return <Card role="article" className="card">
     <img src={asset(recipe.image)} alt={recipe.alt} width="480" height="300" loading="lazy" />
     <FavoriteButton recipe={recipe} {...favoriteProps} />
-    <div className="card-body">
+    <CardContent className="card-body">
       <Heading><a href={recipeUrl(recipe)}>{recipe.name}</a></Heading>
       <Metadata recipe={recipe} />
       <p className="muted">{recipe.ingredients.map(([name]) => name).join(", ")}</p>
       {missing && (missing.length
-        ? <p className="status warning">Бракує: {missing.join(", ")}</p>
-        : <p className="status">Усі інгредієнти є</p>)}
-    </div>
-  </article>;
+        ? <Badge variant="secondary" className="status warning">Бракує: {missing.join(", ")}</Badge>
+        : <Badge variant="secondary" className="status">Усі інгредієнти є</Badge>)}
+    </CardContent>
+  </Card>;
 }
 
 function RecipeGrid({entries, favoriteProps, heading}) {
@@ -67,7 +74,7 @@ function Home({favoriteProps}) {
     <section className="hero">
       <div className="hero-copy"><h1>Готуй із того, що вже є вдома</h1>
         <p>Обери продукти зі свого холодильника й знайди страву, яку можна приготувати вже сьогодні.</p>
-        <div className="actions"><a className="button" href="#/ingredients">Підібрати рецепт</a><a className="button secondary" href="#/recipes">Переглянути каталог</a></div>
+        <div className="actions"><Button asChild><a href="#/ingredients">Підібрати рецепт</a></Button><Button asChild variant="outline"><a href="#/recipes">Переглянути каталог</a></Button></div>
       </div>
       <img src={asset("hero.jpg")} alt="Омлет із зеленню, яйця й помідори на столі" width="744" height="449" fetchPriority="high" />
     </section>
@@ -101,13 +108,13 @@ function IngredientPicker({selected, setSelected, favoriteProps}) {
   return <>
     <Intro title="Що є у вашому холодильнику?">Додайте наявні продукти. Ми покажемо, що можна приготувати та чого бракує.</Intro>
     <section className="panel" aria-label="Вибір продуктів">
-      <label className="field">Знайти інгредієнт<input ref={search} type="search" placeholder="Наприклад, яйця або молоко" value={query} onChange={event => setQuery(event.target.value)} /></label>
+      <label className="field">Знайти інгредієнт<Input ref={search} type="search" placeholder="Наприклад, яйця або молоко" value={query} onChange={event => setQuery(event.target.value)} /></label>
       <div className="chips">{ingredients.filter(name => selected.has(name) || name.includes(needle)).map(name =>
         <button key={name} className="chip" type="button" aria-pressed={selected.has(name)} onClick={() => toggle(name)}>{name}</button>)}</div>
       {needle && !ingredients.some(name => name.includes(needle)) && <p className="muted">Інгредієнта з такою назвою немає в каталозі.</p>}
       <div className="actions">
-        <button type="button" className="button secondary" onClick={() => {setSelected(new Set()); setQuery("");}}>Очистити вибір</button>
-        <button type="button" className="button" onClick={() => results.current.focus()}>До результатів</button>
+        <Button type="button" variant="outline" onClick={() => {setSelected(new Set()); setQuery("");}}>Очистити вибір</Button>
+        <Button type="button" onClick={() => results.current.focus()}>До результатів</Button>
       </div>
       <p className="result-count" role="status">Обрано продуктів: {selected.size}. Знайдено рецептів: {matches.length}.</p>
     </section>
@@ -122,12 +129,12 @@ function IngredientPicker({selected, setSelected, favoriteProps}) {
 }
 
 function SelectField({label, values, value, onChange}) {
-  return <label className="field">{label}<select value={value} onChange={event => onChange(event.target.value)}>
+  return <label className="field">{label}<NativeSelect value={value} onChange={event => onChange(event.target.value)}>
     {values.map(option => {
       const [id, title] = Array.isArray(option) ? option : [option, option];
-      return <option key={id} value={id}>{title}</option>;
+      return <NativeSelectOption key={id} value={id}>{title}</NativeSelectOption>;
     })}
-  </select></label>;
+  </NativeSelect></label>;
 }
 
 const any = ["", "Усі"];
@@ -144,10 +151,16 @@ function Catalog({filters, setFilters, selected, favoriteProps}) {
   const setFilter = (name, value) => setFilters(current => ({...current, [name]: value}));
   return <>
     <Intro title="Каталог рецептів">Знайдіть страву за назвою або скористайтеся фільтрами.</Intro>
-    <form className="panel controls" aria-label="Фільтри каталогу" onSubmit={event => event.preventDefault()}>
-      <label className="field">Назва страви<input type="search" placeholder="Наприклад, омлет" value={filters.query} onChange={event => setFilter("query", event.target.value)} /></label>
-      {catalogFields.map(([name, label, values]) => <SelectField key={name} label={label} values={values}
-        value={filters[name]} onChange={value => setFilter(name, value)} />)}
+    <form className="panel filter-panel" aria-label="Фільтри каталогу" onSubmit={event => event.preventDefault()}
+      onReset={event => {event.preventDefault(); setFilters(initialFilters);}}>
+      <div className="filter-toolbar">
+        <label className="field search-field">Назва страви
+          <span className="search-control"><Search aria-hidden="true" /><Input type="search" placeholder="Наприклад, омлет" value={filters.query} onChange={event => setFilter("query", event.target.value)} /></span>
+        </label>
+        <Button type="reset" variant="outline"><RotateCcw aria-hidden="true" />Скинути фільтри</Button>
+      </div>
+      <div className="controls">{catalogFields.map(([name, label, values]) => <SelectField key={name} label={label} values={values}
+        value={filters[name]} onChange={value => setFilter(name, value)} />)}</div>
     </form>
     <p className="result-count" role="status">Знайдено рецептів: {results.length}.</p>
     <section aria-label="Рецепти">{results.length
