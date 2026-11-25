@@ -12,7 +12,7 @@ import "./style.css";
 
 const routes = [["", "Головна"], ["ingredients", "Підбір"], ["recipes", "Каталог"], ["favorites", "Обране"]];
 const ingredients = [...new Set(recipes.flatMap(recipe => recipe.ingredients.map(([name]) => name)))].sort((a, b) => a.localeCompare(b, "uk"));
-const asset = filename => import.meta.env.BASE_URL + filename;
+const asset = filename => import.meta.env.BASE_URL + filename + "?v=" + __PHOTO_VERSIONS__[filename];
 const recipeUrl = recipe => "#/recipes/" + recipe.id;
 const format = new Intl.NumberFormat("uk", {maximumFractionDigits: 2});
 const storageKey = "easyrecipe-favorites";
